@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>PM Agent</title>
+<style>
+  :root {
+    --surface-2: #ffffff; --surface-1: #f5f5f4; --border: #e2e2e0; --border-strong: #cfcfcb;
+    --text-primary: #1a1a18; --text-secondary: #63635e; --text-muted: #93938c;
+    --accent-bg: #e6f1fb; --accent-text: #0c447c; --accent-border: #378add;
+    --success-bg: #eaf3de; --success-text: #27500a;
+    --danger-bg: #fcebeb; --danger-text: #791f1f;
+    --warning-bg: #faeeda; --warning-text: #633806;
+  }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+         color: var(--text-primary); max-width: 900px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+  h1 { font-size: 22px; margin-bottom: 0.15rem; }
+  .subtle { color: var(--text-secondary); font-size: 13.5px; margin-bottom: 1.5rem; }
+  .card { background: var(--surface-2); border: 1px solid var(--border); border-radius: 12px;
+          padding: 1rem 1.25rem; margin-bottom: 12px; }
+  textarea, input { width: 100%; box-sizing: border-box; font-size: 13.5px; border-radius: 6px;
+                    border: 1px solid var(--border-strong); background: var(--surface-2);
+                    color: var(--text-primary); padding: 8px; font-family: inherit; }
+  textarea { resize: vertical; }
+  label { font-size: 12px; color: var(--text-muted); display: block; margin: 10px 0 4px; }
+  button { font-size: 13px; padding: 7px 14px; border-radius: 6px; border: 1px solid var(--border-strong);
+           background: var(--surface-2); color: var(--text-primary); cursor: pointer; }
+  button:hover { background: var(--surface-1); }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-primary { border-color: var(--success-text); color: var(--success-text); font-weight: 600; }
+  .btn-row { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+  .pill { display: inline-block; font-size: 11.5px; padding: 2px 9px; border-radius: 6px; font-weight: 600; }
+  .pill-add { background: var(--success-bg); color: var(--success-text); }
+  .pill-update { background: var(--accent-bg); color: var(--accent-text); }
+  .pill-status { background: var(--surface-1); color: var(--text-secondary); }
+  .pill-status.completed { background: var(--success-bg); color: var(--success-text); }
+  .pill-status.blocked { background: var(--danger-bg); color: var(--danger-text); }
+  .pill-status.pending-review { background: var(--warning-bg); color: var(--warning-text); }
+  .field-row { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12.5px; color: var(--text-secondary); margin: 6px 0; }
+  .field-row b { color: var(--text-primary); }
+  .decided { opacity: 0.55; }
+  .decision-tag { font-size: 11.5px; font-weight: 600; padding: 2px 9px; border-radius: 6px; }
+  .tag-approve { background: var(--success-bg); color: var(--success-text); }
+  .tag-ignore { background: var(--surface-1); color: var(--text-muted); }
+  .tag-split { background: var(--accent-bg); color: var(--accent-text); }
+  .tag-edit { background: var(--warning-bg); color: var(--warning-text); }
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); }
+  th { color: var(--text-secondary); font-size: 11px; }
+  .error { font-size: 12.5px; color: var(--danger-text); margin-top: 6px; }
+  .method-tag { font-size: 11px; color: var(--text-muted); }
+  .edit-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 8px; margin: 10px 0; }
+  .empty { font-size: 13px; color: var(--text-muted); text-align: center; padding: 1rem; }
+  .heading { font-weight: 600; font-size: 16px; margin: 1.75rem 0 0.6rem; }
+</style>
+</head>
+<body>
+  <h1>PM Agent</h1>
+  <div class="subtle">Running against the real backend at <code>/api/*</code> - your API key stays server-side.</div>
+
+  <div class="card">
+    <label>Meeting notes</label>
+    <textarea id="notes" rows="6" placeholder="Paste Gemini notes, a transcript summary, or manual notes..."></textarea>
+    <label>Meeting date</label>
+    <input type="date" id="meetingDate" />
+    <div class="btn-row">
+      <button class="btn-primary" id="extractBtn" onclick="doExtract()">Extract tasks</button>
+      <span id="methodTag" class="method-tag"></span>
+    </div>
+    <div id="extractError" class="error"></div>
+  </div>
+
+  <div id="proposalsWrap"></div>
+
+  <div class="heading" id="trackerHeading">Task tracker</div>
+  <div id="trackerWrap"></div>
+
+<script>
+let proposals = [];
+let decisions = [];
+let editingIndex = null;
+
+function esc(s) {
+  return String(s == null ? "" : s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+function statusClass(s) { return (s || "").toLowerCase().replace(/\s+/g, "-"); }
+
+async function loadTracker() {
+  const res = await fetch("/api/tracker");
+  const data = await res.json();
+  renderTracker(data.rows);
+}
+
+function renderTracker(rows) {
+  document.getElementById("trackerHeading").textContent = `Task tracker (${rows.length} rows)`;
+  const wrap = document.getElementById("trackerWrap");
+  if (!rows.length) { wrap.innerHTML = '<div class="empty">No tasks tracked yet.</div>'; return; }
+  const body = rows.map(r => `<tr>
+      <td>${esc(r.workstream)}</td><td>${esc(r.task)}</td><td>${esc(r.owner)}</td>
+      <td><span class="pill pill-status ${statusClass(r.status)}">${esc(r.status)}</span></td>
+      <td>${esc(r.priority)}</td><td>${esc(r.last_updated)}</td></tr>`).join("");
+  wrap.innerHTML = `<table><thead><tr><th>Workstream</th><th>Task</th><th>Owner</th><th>Status</th><th>Priority</th><th>Updated</th></tr></thead><tbody>${body}</tbody></table>`;
+}
+
+async function doExtract() {
+  const notes = document.getElementById("notes").value;
+  const meetingDate = document.getElementById("meetingDate").value;
+  const errEl = document.getElementById("extractError");
+  const btn = document.getElementById("extractBtn");
+  errEl.textContent = "";
+  if (!notes.trim()) { errEl.textContent = "Paste some meeting notes first."; return; }
+  if (!meetingDate) { errEl.textContent = "Pick a meeting date first."; return; }
+
+  btn.disabled = true; btn.textContent = "Extracting...";
+  try {
+    const res = await fetch("/api/proposals", {
+      method: "POST", headers: {"content-type": "application/json"},
+      body: JSON.stringify({ notes, meeting_date: meetingDate }),
+    });
+    const data = await res.json();
+    if (!res.ok) { errEl.textContent = data.detail || "Something went wrong."; return; }
+    document.getElementById("methodTag").textContent = `extraction method: ${data.method}`;
+    proposals = data.proposals;
+    decisions = proposals.map(() => null);
+    editingIndex = null;
+    if (!proposals.length) { errEl.textContent = "No tasks found in those notes."; }
+    renderProposals();
+  } catch (e) {
+    errEl.textContent = "Request failed: " + e.message;
+  } finally {
+    btn.disabled = false; btn.textContent = "Extract tasks";
+  }
+}
+
+function decisionTag(d) {
+  if (!d) return "";
+  const map = { approve: ["Approved", "tag-approve"], ignore: ["Ignored", "tag-ignore"],
+                split: ["Split as new", "tag-split"], edit: ["Edited & approved", "tag-edit"] };
+  const [label, cls] = map[d.action];
+  return `<span class="decision-tag ${cls}">${label}</span>`;
+}
+
+function renderProposals() {
+  const wrap = document.getElementById("proposalsWrap");
+  if (!proposals.length) { wrap.innerHTML = ""; return; }
+
+  const cards = proposals.map((p, i) => {
+    const d = decisions[i];
+    const row = p.row;
+    const isUpdate = p.action === "update";
+    let diffHtml = "";
+    if (isUpdate) {
+      diffHtml = `<div class="field-row"><b>Matched an existing row.</b>&nbsp;${esc(p.diff || "no field changes")}</div>`;
+    }
+    let body;
+    if (editingIndex === i) {
+      const fields = ["owner","status","priority","due_date","blocker","follow_up_needed"];
+      body = `<div class="edit-grid">${fields.map(f =>
+        `<div><label>${f.replace(/_/g," ")}</label><input data-field="${f}" value="${esc(row[f])}" /></div>`
+      ).join("")}</div>
+      <div class="btn-row">
+        <button class="btn-primary" onclick="saveEdit(${i})">Save &amp; approve</button>
+        <button onclick="cancelEdit()">Cancel</button>
+      </div>`;
+    } else if (!d) {
+      body = `<div class="btn-row">
+        <button class="btn-primary" onclick="decide(${i},'approve')">Approve</button>
+        <button onclick="startEdit(${i})">Edit</button>
+        <button onclick="decide(${i},'ignore')">Ignore</button>
+        ${isUpdate ? `<button onclick="decide(${i},'split')" title="This looks like a different task, not a real match">Split as new</button>` : ""}
+      </div>`;
+    } else {
+      body = "";
+    }
+
+    return `<div class="card ${d ? 'decided' : ''}" id="proposal-${i}">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">
+        <div><span class="pill ${isUpdate ? 'pill-update' : 'pill-add'}">${isUpdate ? "Update" : "New"}</span>
+        <b style="margin-left:8px;">${esc(row.workstream)}</b></div>
+        ${d ? decisionTag(d) : ""}
+      </div>
+      <div style="margin:6px 0 4px; font-weight:600;">${esc(row.task)}</div>
+      ${diffHtml}
+      <div class="field-row">
+        <span><b>Owner:</b> ${esc(row.owner)}</span>
+        <span><b>Status:</b> <span class="pill pill-status ${statusClass(row.status)}">${esc(row.status)}</span></span>
+        <span><b>Priority:</b> ${esc(row.priority)}</span>
+        <span><b>Follow-up:</b> ${esc(row.follow_up_needed)}</span>
+      </div>
+      ${row.blocker ? `<div class="field-row"><span><b>Blocker:</b> ${esc(row.blocker)}</span></div>` : ""}
+      ${row.notes ? `<div class="field-row"><span style="color:var(--text-muted);">${esc(row.notes)}</span></div>` : ""}
+      ${body}
+    </div>`;
+  }).join("");
+
+  const allDecided = decisions.every(d => d !== null);
+  wrap.innerHTML = `<div class="heading">Proposed changes</div>` + cards +
+    `<div class="btn-row"><button class="btn-primary" ${allDecided ? "" : "disabled"} onclick="applyDecisions()">
+      ${allDecided ? "Apply changes to tracker" : `Review all ${proposals.length} proposals to continue`}
+    </button></div>`;
+}
+
+function decide(i, action) { decisions[i] = { action }; renderProposals(); }
+function startEdit(i) { editingIndex = i; renderProposals(); }
+function cancelEdit() { editingIndex = null; renderProposals(); }
+function saveEdit(i) {
+  const card = document.getElementById(`proposal-${i}`);
+  const edits = {};
+  card.querySelectorAll("input[data-field]").forEach(inp => { edits[inp.dataset.field] = inp.value; });
+  decisions[i] = { action: "edit", edits };
+  editingIndex = null;
+  renderProposals();
+}
+
+async function applyDecisions() {
+  const res = await fetch("/api/apply", {
+    method: "POST", headers: {"content-type": "application/json"},
+    body: JSON.stringify({ proposals, decisions }),
+  });
+  const data = await res.json();
+  if (!res.ok) { document.getElementById("extractError").textContent = data.detail || "Apply failed."; return; }
+  proposals = []; decisions = []; editingIndex = null;
+  document.getElementById("notes").value = "";
+  document.getElementById("proposalsWrap").innerHTML = "";
+  document.getElementById("methodTag").textContent = "";
+  renderTracker(data.rows);
+}
+
+loadTracker();
+</script>
+</body>
+</html>

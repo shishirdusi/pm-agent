@@ -111,7 +111,7 @@ def propose_merge(existing_rows: list[dict], new_tasks: list[dict], meeting_date
 
         match_idx = _find_match(new_task, rows_copy)
         if match_idx is None:
-            proposals.append({"action": "add", "index": None, "row": row, "diff": None})
+            proposals.append({"action": "add", "index": None, "row": row, "new_only_row": row, "diff": None})
         else:
             old = rows_copy[match_idx]
             changes = []
