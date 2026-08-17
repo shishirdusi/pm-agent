@@ -1,0 +1,26 @@
+Sanio AI Daily standup
+Jul 30, 2026
+Attendees: Vamsi Putrevu, Rohit Adiga, Saumya Phadkar, Lakshmanan LN, Yatharth Srivastava
+
+Summary:
+The meeting reviewed system performance, prioritized integration stability, and adjusted team operational processes for improved project visibility. Teams prioritized verifying rate limiting and throttling metrics. A shift toward demonstration-based standups aims to provide better project visibility. The team decided to maintain current Supabase implementations over migrating to new enterprise registration tools (Okit/WorkOS). Prompt caching for agent cost reduction was discussed.
+
+Decisions:
+- Standup meeting format updated to demos: team will transition to demo-based standups.
+- Registration workflow tool strategy: maintain existing Supabase-based registration workflow; keep Okit as an optional future integration path.
+- Pro model accounts procurement: team agreed to procure and evaluate Claude Pro accounts to assess performance/automation.
+
+Next steps:
+- [Lakshmanan LN, Saumya Phadkar]: Conduct a warm-up call to review the rate limiter configuration and Langfuse job recording process.
+- [Saumya Phadkar]: Demonstrate how specific jobs are captured and recorded within Langfuse.
+- [The group]: Transition the current standup format to include live demonstrations of deliverables.
+- [Lakshmanan LN]: Configure the cloud code environment to enable direct deployment of landing page URLs.
+- [Vamsi Putrevu]: Refine the landing page pitch to improve clarity on business impact and performance metrics.
+- [Lakshmanan LN]: Adjust the data setup schedule to eliminate reliance on the 5 a.m. IST limit.
+- [Rohit Adiga]: Send the updated environment file to enable necessary configuration changes.
+
+Details:
+- Metering / RDS integration: Saumya Phadkar reported the metering piece is nearly complete, with usage data (tokens, LLM calls, external API calls) routing to RDS. Pricing is not yet tracked in RDS. The code is ready for Lakshmanan LN's review; they scheduled a follow-up review session after this call.
+- Registration Workflow: Yatharth Srivastava reported that 85% of the registration workflow is complete and committed to finishing it today.
+- AI Visibility multi-URL: Yatharth Srivastava is integrating five products into a multi-URL format for the AI visibility tool; single-URL functionality already works, but consolidating final scores across 5 products is still unresolved.
+- Data reporting issue: Rohit Adiga and Lakshmanan LN identified an issue where data was incomplete due to a 5:00 AM IST cutoff configuration. Lakshmanan LN requested an updated environment file and committed to implementing the fix.

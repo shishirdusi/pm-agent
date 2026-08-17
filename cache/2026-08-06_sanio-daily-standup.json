@@ -1,0 +1,74 @@
+[
+  {
+    "workstream": "AI Visibility Tool - Deployment",
+    "task": "Merge AI visibility tool code and redeploy",
+    "description": "Merge the current AI visibility tool code and redeploy it to production.",
+    "owner": "Yatharth Srivastava",
+    "status": "Not Started",
+    "priority": "High",
+    "due_date": "",
+    "blocker": "Needs a Gemini API key and the Chloro Pro subscription active before redeploy can complete",
+    "follow_up_needed": "Yes",
+    "notes": "Currently blocked on Chloro free tier (1 concurrent job) which is too slow for the 28 total Chloro jobs (14 ChatGPT + 14 Gemini) the tool needs per domain."
+  },
+  {
+    "workstream": "AI Visibility Tool - Deployment",
+    "task": "Send code repository link to Lakshmanan for review",
+    "description": "Share the repo link so Lakshmanan LN can review the AI visibility tool code.",
+    "owner": "Yatharth Srivastava",
+    "status": "Not Started",
+    "priority": "Medium",
+    "due_date": "",
+    "blocker": "",
+    "follow_up_needed": "No",
+    "notes": ""
+  },
+  {
+    "workstream": "Team Ops",
+    "task": "Upgrade to Chloro Pro subscription ($30/mo) for 10 concurrent jobs",
+    "description": "Purchase the $30 Chloro Pro tier to unlock 10 concurrent jobs (up from 1 on the free tier), needed to run the AI visibility tool's 28 Chloro jobs per domain at a reasonable speed.",
+    "owner": "Lakshmanan LN",
+    "status": "Not Started",
+    "priority": "High",
+    "due_date": "",
+    "blocker": "",
+    "follow_up_needed": "No",
+    "notes": "37,500 credits included; can pay $0.80/1k credits beyond that, or upgrade further, if 10 concurrent jobs isn't enough."
+  },
+  {
+    "workstream": "Observability - Langfuse Migration",
+    "task": "Switch Langfuse endpoint from public cloud to internal Sano instance and redeploy",
+    "description": "Update the environment file to point at the internal langfuse.io.ai instance instead of us.cloud.langfuse.com, then redeploy so tracing routes correctly.",
+    "owner": "Saumya Phadkar",
+    "status": "In Progress",
+    "priority": "Medium",
+    "due_date": "",
+    "blocker": "",
+    "follow_up_needed": "No",
+    "notes": "New organization and project already created in the Sano Langfuse instance; env file update + redeploy still pending."
+  },
+  {
+    "workstream": "Observability - Langfuse Migration",
+    "task": "Set up evaluation sets in the Sano Langfuse instance",
+    "description": "Configure eval sets within the internal (Sano) Langfuse instance now that tracing is being migrated there.",
+    "owner": "Saumya Phadkar",
+    "status": "Not Started",
+    "priority": "Low",
+    "due_date": "",
+    "blocker": "",
+    "follow_up_needed": "No",
+    "notes": ""
+  },
+  {
+    "workstream": "Catalog Agents - Cost Optimization",
+    "task": "Build model-comparison datasets and run GPT-4 vs 4-mini cost/latency evaluation",
+    "description": "Convert existing Langfuse traces into datasets and run comparative evaluations of GPT-4 vs a smaller '4-mini' model to see if cost can drop from ~$1,000/day to $400-500/day without losing accuracy.",
+    "owner": "Saumya Phadkar",
+    "status": "Not Started",
+    "priority": "High",
+    "due_date": "",
+    "blocker": "",
+    "follow_up_needed": "Yes",
+    "notes": "Lakshmanan walked Saumya through the Langfuse playground workflow for this; results need to be reported back before any model switch."
+  }
+]

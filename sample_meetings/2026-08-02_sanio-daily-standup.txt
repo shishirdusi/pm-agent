@@ -1,0 +1,23 @@
+Sanio AI Daily standup
+Aug 3, 2026 (meeting held Aug 2)
+Attendees: Vamsi Putrevu, Sandeep Chakradhar, Saumya Phadkar, Yatharth Srivastava, Lakshmanan LN
+
+Summary:
+The team confirmed onboarding processes and resolved agent matching bugs while establishing new quality control protocols. Client onboarding processes are organization-based for services. The catalog agent matching bug involving 100 products is resolved. Human-in-the-loop reviews are now required for all AI output to ensure quality. The Segments project onboarding process reached completion.
+
+Decisions:
+- Needs further discussion: evaluation methodology for agent output (fixed scenarios + golden datasets to validate agent output before release).
+
+Next steps:
+- [Sandeep Chakradhar] Review metering documentation.
+- [Saumya Phadkar] Share product file: send the file containing 100 products for review.
+- [The group] Develop evaluation approach using golden datasets; present to Vamsi.
+- [Saumya Phadkar] Send output to Lakshmanan: copy rejected agent outputs and share for review.
+- [Lakshmanan LN] Analyze rejected output and report findings to Vamsi.
+- [Yatharth Srivastava] Contact Ramshi to discuss work progress.
+
+Details:
+- Registration & Onboarding (Segments): Sandeep Chakradhar reported the successful completion of the segments client onboarding process as of Friday. Sandeep has completed the login and domain-duplication-connection tasks for this flow.
+- Five-product multi-URL input: Bindu is currently working on the five-product input for the multiple-URL feature (still in progress).
+- Catalog Agent Bug Fix: Saumya Phadkar deployed fixes after client feedback. The Tavi matching threshold was too low, causing incorrect product matches. Bug is now fixed; a 100-product file is ready for a second set of eyes before sending to the client.
+- Quality Process: Vamsi Putrevu emphasized the need for a human-in-the-loop review process for all agent output, since client output has now been rejected two to three times. The team will propose an eval/golden-dataset testing approach and report back.

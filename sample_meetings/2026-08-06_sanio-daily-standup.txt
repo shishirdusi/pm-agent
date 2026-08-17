@@ -1,0 +1,48 @@
+Sanio AI Daily standup
+Aug 7, 2026 (meeting held Aug 6)
+Attendees: Sandeep Chakradhar, Saumya Phadkar, Yatharth Srivastava, Lakshmanan LN, Rohit Adiga
+
+Summary:
+Meeting focused on scaling AI tool infrastructure through subscription upgrades, environment
+migrations, and cost optimization strategies. Development of the AI visibility tool continues
+with a pivot toward broader query handling. The team agreed to purchase a $30 Chloro Pro
+subscription to enable 10 concurrent jobs. Discussion centered on migrating Langfuse from the
+cloud-hosted version to the internal Sano instance for better traceability. Current LLM usage
+costs reached $1,000/day; the team plans to evaluate smaller models to reduce costs.
+
+Decisions:
+- Chloro Pro subscription tier upgrade: team will upgrade to the $30 Chloro Pro subscription
+  to support 10 concurrent jobs.
+- Langfuse hosting infrastructure migration: migrate Langfuse usage from the public cloud
+  version to internal hosted infrastructure (langfuse.io.ai).
+- Model performance cost-optimization strategy: evaluate cost-optimization by running
+  comparative assessments between GPT-4 and 4-mini using Langfuse datasets.
+
+Next steps:
+- [Yatharth Srivastava] Merge Code: merge the AI visibility tool code and redeploy it.
+- [Yatharth Srivastava] Send Repository: send the code repository link to Lakshmanan LN.
+- [Saumya Phadkar] Update Langfuse Endpoint: switch the environment file endpoint to the
+  hosted Langfuse version and redeploy.
+- [Saumya Phadkar] Set Up Evals: configure evaluation sets within the Sano Langfuse instance.
+- [Saumya Phadkar] Create Datasets: convert trace data into datasets to compare the
+  performance and cost of different models.
+- [Saumya Phadkar] Run Evaluations: execute model evaluations against the datasets to assess
+  cost and latency improvements.
+
+Details:
+- AI Visibility Tool Status: Yatharth Srivastava reported the tool is in development, but
+  fetched products aren't yet being fed directly to CS. Yatharth needs a Gemini API key and
+  the Chloro Pro version to redeploy - currently blocked on the free tier, which only allows
+  1 concurrent job (very slow for 28 total Chloro jobs: 14 for ChatGPT, 14 for Gemini).
+- Chloro Tool Capacity: the free tier is restricted to 1 concurrent job. Lakshmanan LN
+  confirmed the light/$30 version supports 10 concurrent jobs and 37,500 credits, sufficient
+  for now; can upgrade further or pay per-credit later if needed.
+- Langfuse Configuration: Lakshmanan LN and Saumya Phadkar worked through switching from
+  us.cloud.langfuse.com to the internal langfuse.io.ai instance. Saumya created a new
+  organization and project in the Sano instance and will update the environment file and
+  redeploy so tracing routes correctly.
+- Model Cost Optimization: Saumya Phadkar is currently using GPT-4 via Open Router (Bedrock
+  was throttling aggressively). Lakshmanan LN suggested using the Langfuse playground to
+  compare GPT-4 against "4-mini" on existing datasets, aiming to cut costs from ~$1,000/day
+  to the $400-500/day range without losing accuracy. Saumya agreed to run these evaluations
+  and report back.

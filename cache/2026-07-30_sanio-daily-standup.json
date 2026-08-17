@@ -1,0 +1,86 @@
+[
+  {
+    "workstream": "Catalog Agents - Metering",
+    "task": "Build metering module (track API calls / token usage for outcome-based pricing)",
+    "description": "Metering piece is now nearly complete, routing usage (tokens, LLM calls, external API calls) to RDS. Pricing itself is not yet tracked in RDS.",
+    "owner": "Saumya Phadkar",
+    "status": "Pending Review",
+    "priority": "High",
+    "due_date": "",
+    "blocker": "",
+    "follow_up_needed": "No",
+    "notes": "UPDATE from Jul 29: was In Progress, now feature-complete and ready for Lakshmanan's review."
+  },
+  {
+    "workstream": "AI Visibility Tool - Registration & Onboarding",
+    "task": "Complete registration workflow",
+    "description": "Registration workflow (login/signup handling) reported 85% complete.",
+    "owner": "Yatharth Srivastava",
+    "status": "In Progress",
+    "priority": "High",
+    "due_date": "2026-07-30",
+    "blocker": "",
+    "follow_up_needed": "No",
+    "notes": "Related to Sandeep's registration-flow task from Jul 29 but this is Yatharth's piece of the same workstream; owner unclear \u2014 flag to confirm whether this is the same task as Sandeep's or a separate piece."
+  },
+  {
+    "workstream": "AI Visibility Tool - Multi-Product",
+    "task": "Integrate five products into multi-URL AI visibility flow",
+    "description": "Single-URL analysis already works; multi-URL (5 products) integration in progress. Consolidating a single final score across 5 products is still unresolved.",
+    "owner": "Yatharth Srivastava",
+    "status": "In Progress",
+    "priority": "Medium",
+    "due_date": "",
+    "blocker": "No agreed method for consolidating per-product scores into one final score",
+    "follow_up_needed": "Yes",
+    "notes": ""
+  },
+  {
+    "workstream": "Internal Tooling",
+    "task": "Fix 5 a.m. IST data cutoff causing incomplete data",
+    "description": "Data setup was using a 5:00 AM IST cutoff, leaving data incomplete. Requires an updated environment file.",
+    "owner": "Lakshmanan LN",
+    "status": "Blocked",
+    "priority": "Medium",
+    "due_date": "",
+    "blocker": "Waiting on updated environment file from Rohit Adiga",
+    "follow_up_needed": "Yes",
+    "notes": ""
+  },
+  {
+    "workstream": "Internal Tooling",
+    "task": "Send updated environment file",
+    "description": "Rohit to send the updated env file so Lakshmanan can implement the data-cutoff fix.",
+    "owner": "Rohit Adiga",
+    "status": "Not Started",
+    "priority": "Medium",
+    "due_date": "",
+    "blocker": "",
+    "follow_up_needed": "Yes",
+    "notes": "Blocks the task above."
+  },
+  {
+    "workstream": "Team Ops",
+    "task": "Switch standup format to live demos",
+    "description": "Team will transition standups to demo-based format for better visibility into deliverables.",
+    "owner": "The group",
+    "status": "Not Started",
+    "priority": "Low",
+    "due_date": "",
+    "blocker": "",
+    "follow_up_needed": "No",
+    "notes": ""
+  },
+  {
+    "workstream": "Team Ops",
+    "task": "Procure Claude Pro accounts to evaluate performance",
+    "description": "Team agreed to buy a couple of Claude Pro accounts (~$23.60/mo each) to test model capabilities.",
+    "owner": "Lakshmanan LN",
+    "status": "Not Started",
+    "priority": "Low",
+    "due_date": "",
+    "blocker": "",
+    "follow_up_needed": "No",
+    "notes": ""
+  }
+]

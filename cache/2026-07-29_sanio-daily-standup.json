@@ -1,0 +1,86 @@
+[
+  {
+    "workstream": "AI Visibility Tool - Registration & Onboarding",
+    "task": "Move registration step to end of flow + add domain-duplication cache check",
+    "description": "Relocate the user registration step to occur after catalog agent processing, and implement a cache check to handle domain duplication before requiring user input.",
+    "owner": "Sandeep Chakradhar",
+    "status": "In Progress",
+    "priority": "High",
+    "due_date": "",
+    "blocker": "",
+    "follow_up_needed": "No",
+    "notes": "Registration/duplication logic largely built already; needs adjustment for the new flow order. Sandeep will coordinate with Yatharth on the best integration point."
+  },
+  {
+    "workstream": "AI Visibility Tool - Scoring",
+    "task": "Update scoring logic and integrate product-specific prompts",
+    "description": "Modify the AI visibility scoring logic and integrate product-specific prompts; make the module independent/reusable.",
+    "owner": "Bindu Achalla",
+    "status": "In Progress",
+    "priority": "Medium",
+    "due_date": "",
+    "blocker": "",
+    "follow_up_needed": "No",
+    "notes": "Bindu owns the AI visibility component end to end."
+  },
+  {
+    "workstream": "Catalog Agents - Metering",
+    "task": "Build metering module (track API calls / token usage for outcome-based pricing)",
+    "description": "Track API calls and token usage so pricing can be outcome-based (per product processed) rather than token-based.",
+    "owner": "Saumya Phadkar",
+    "status": "In Progress",
+    "priority": "High",
+    "due_date": "",
+    "blocker": "",
+    "follow_up_needed": "No",
+    "notes": "Integration with Supabase suggested for rate limiting/auth."
+  },
+  {
+    "workstream": "Catalog Agents - Metering",
+    "task": "Review metering module with Lakshmanan and share documentation",
+    "description": "Collaborate with Lakshmanan LN to review the metering piece and its Supabase integration; send code, links, and documentation for review.",
+    "owner": "Saumya Phadkar",
+    "status": "Not Started",
+    "priority": "Medium",
+    "due_date": "",
+    "blocker": "Waiting for Lakshmanan's review",
+    "follow_up_needed": "Yes",
+    "notes": ""
+  },
+  {
+    "workstream": "Catalog Agents - Cost Analysis",
+    "task": "Run 100 products through catalog agents to evaluate token cost and engineering hours",
+    "description": "Analyze best-case/worst-case cost and manual engineering hours (setup + review) for processing 100 products, to inform pricing. Present at next demo.",
+    "owner": "Lakshmanan LN",
+    "status": "Not Started",
+    "priority": "High",
+    "due_date": "",
+    "blocker": "",
+    "follow_up_needed": "No",
+    "notes": ""
+  },
+  {
+    "workstream": "Internal Tooling",
+    "task": "Fix issues in the new issue tracker tab, prioritizing chatbot functionality",
+    "description": "Resolve outstanding issues in the tracker, with the chatbot bug as top priority ahead of an upcoming demo.",
+    "owner": "Lakshmanan LN",
+    "status": "Not Started",
+    "priority": "High",
+    "due_date": "",
+    "blocker": "",
+    "follow_up_needed": "No",
+    "notes": ""
+  },
+  {
+    "workstream": "General",
+    "task": "Deploy all assigned components (metering, registration, UI integration) by end of day",
+    "description": "Team-wide deployment target so components can be tested together.",
+    "owner": "TBD",
+    "status": "Not Started",
+    "priority": "Medium",
+    "due_date": "2026-07-29",
+    "blocker": "",
+    "follow_up_needed": "Yes",
+    "notes": "Group-level commitment, not a single owner \u2014 flagged for follow-up per person at next standup."
+  }
+]

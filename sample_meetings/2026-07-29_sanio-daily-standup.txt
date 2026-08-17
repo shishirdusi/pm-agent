@@ -1,0 +1,30 @@
+Sanio AI Daily standup
+Jul 29, 2026
+Attendees: Vamsi Putrevu, Bindu Achalla, Sandeep Chakradhar, Yatharth Srivastava, Saumya Phadkar, Lakshmanan LN
+
+Summary:
+Meeting reviewed AI visibility tool progress and finalized component integration workflows and deployment expectations for daily testing. The team established a 3-step user flow starting with domain input before registration. Supabase will manage rate limiting and authentication while Langfuse tracks system batch runs. Pricing will be outcome-based, targeting processing counts rather than token consumption. Key components including metering, registration, and UI integration are scheduled for end-of-day deployment.
+
+Decisions:
+- Three-step application flow established: domain entry for AI visibility, catalog agent enhancement, results display.
+- Independent product retrieval module adopted: fetching top products is a reusable API component separate from the AI visibility tool.
+- Outcome-based metering strategy selected: billing tracks number of products processed, not token consumption.
+- Direct catalog enhancement path approved: bypass AI visibility scanning for users who already provide product files.
+- Delayed user registration flow adopted: registration moves to the end of the visibility + enhancement workflow.
+- Pre-login domain cache check implemented: check cache on entry, independent of login state.
+
+Next steps:
+- [Lakshmanan LN] Analyze Product Costs: run the selected 100 products through the catalog agents to evaluate total tokens and costs, and calculate engineering hours for setup + review, to present at the next demo.
+- [Sandeep Chakradhar] Update Registration Flow: relocate the user registration step to occur after catalog agent processing; implement a cache check to handle domain duplication before requiring user input.
+- [Bindu Achalla] Update Visibility Tool: modify the scoring logic and integrate product-specific prompts within the AI visibility tool; make the module independent.
+- [Lakshmanan LN] Review Metering Module: collaborate with Saumya to review the current status of the metering piece and its integration with Supabase for rate limiting.
+- [Saumya Phadkar] Test Metering: verify measurements using Gifts AI instead of manual methods.
+- [Saumya Phadkar] Share Documentation: send code, links, and documentation to Lakshmanan LN for review.
+- [The group] Deploy Work: deploy all assigned tasks by end of day and provide status updates.
+- [Lakshmanan LN] Resolve Issues: fix all items in the new issue tab, prioritizing chatbot functionality.
+- [Bindu Achalla] Integrate Registration: coordinate with Sep (Sandeep) to reuse the existing domain duplication and registration endpoint.
+
+Details:
+- Registration & Domain Duplication: Sandeep Chakradhar reported that the registration and domain duplication prevention logic is largely complete, but requires adjustments to align with the new flow where registration happens at the end of the process. Sandeep will collaborate with Yatharth Srivastava to integrate this logic appropriately.
+- Metering and Throttling: Saumya Phadkar is working on the metering piece, designed to track API calls and token usage so pricing can be outcome-based rather than token-based. Lakshmanan LN suggested using Supabase for rate limiting and authentication management.
+- Division of Responsibilities: Bindu Achalla will lead the AI visibility component (scoring logic, product-specific prompts). Yatharth Srivastava will manage the end-to-end flow and UI integration.

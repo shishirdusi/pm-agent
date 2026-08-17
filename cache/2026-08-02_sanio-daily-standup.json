@@ -1,0 +1,74 @@
+[
+  {
+    "workstream": "AI Visibility Tool - Registration & Onboarding",
+    "task": "Move registration step to end of flow + add domain-duplication cache check",
+    "description": "Segments client onboarding (login + domain-duplication handling) confirmed complete as of Friday.",
+    "owner": "Sandeep Chakradhar",
+    "status": "Completed",
+    "priority": "High",
+    "due_date": "",
+    "blocker": "",
+    "follow_up_needed": "No",
+    "notes": "UPDATE from Jul 29: was In Progress, now confirmed Completed for the Segments onboarding flow."
+  },
+  {
+    "workstream": "AI Visibility Tool - Multi-Product",
+    "task": "Five-product input for multi-URL feature",
+    "description": "Bindu is currently working on the five-product input for the multiple-URL feature.",
+    "owner": "Bindu Achalla",
+    "status": "In Progress",
+    "priority": "Medium",
+    "due_date": "",
+    "blocker": "",
+    "follow_up_needed": "No",
+    "notes": "Companion task to Yatharth's multi-URL score-consolidation work from Jul 30; same workstream, different owner/slice \u2014 kept as a separate task."
+  },
+  {
+    "workstream": "Catalog Agents - Quality",
+    "task": "Fix Tavi product-matching threshold bug (100-product batch)",
+    "description": "Tavi matching threshold was too low, causing incorrect product matches. Bug fixed; 100-product file ready for a second reviewer before sending to client.",
+    "owner": "Saumya Phadkar",
+    "status": "Pending Review",
+    "priority": "High",
+    "due_date": "",
+    "blocker": "Needs a second reviewer before client delivery",
+    "follow_up_needed": "Yes",
+    "notes": ""
+  },
+  {
+    "workstream": "Catalog Agents - Quality",
+    "task": "Define eval / golden-dataset approach for testing agent output changes",
+    "description": "Client output has been rejected 2\u20133 times. Team needs a way to test agent output changes against fixed scenarios / golden datasets before release.",
+    "owner": "Yatharth Srivastava",
+    "status": "Not Started",
+    "priority": "High",
+    "due_date": "",
+    "blocker": "Needs more defined experiments/scenarios before this can start",
+    "follow_up_needed": "Yes",
+    "notes": "Owner unclear \u2014 Vamsi asked \"the group\" to come back with an approach; Yatharth was the one actively proposing a method, assigned tentatively pending confirmation."
+  },
+  {
+    "workstream": "Catalog Agents - Quality",
+    "task": "Share rejected agent output with Lakshmanan for review",
+    "description": "Copy the rejected agent outputs and client feedback and send to Lakshmanan LN for analysis.",
+    "owner": "Saumya Phadkar",
+    "status": "Not Started",
+    "priority": "Medium",
+    "due_date": "",
+    "blocker": "",
+    "follow_up_needed": "No",
+    "notes": ""
+  },
+  {
+    "workstream": "Catalog Agents - Metering",
+    "task": "Review metering documentation",
+    "description": "Sandeep to read the metering documentation Saumya provided.",
+    "owner": "Sandeep Chakradhar",
+    "status": "Not Started",
+    "priority": "Low",
+    "due_date": "",
+    "blocker": "",
+    "follow_up_needed": "No",
+    "notes": ""
+  }
+]

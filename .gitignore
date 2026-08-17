@@ -1,0 +1,29 @@
+# Secrets - never commit these
+.env
+*.json.key
+service-account*.json
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.venv/
+venv/
+env/
+*.egg-info/
+
+# Generated output - this is YOUR team's real data, not sample/demo data,
+# so it shouldn't be committed to a public or shared repo by default.
+# Delete this line (and the one below) if you actually want to version it.
+output/*.csv
+output/*.txt
+
+# OS cruft
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp

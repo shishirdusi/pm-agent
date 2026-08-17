@@ -1,0 +1,17 @@
+# Core (needed for the demo as shipped)
+# - stdlib only: csv, json, difflib, re, argparse, dataclasses
+
+# Loads ANTHROPIC_API_KEY (and friends) from a .env file automatically, so you don't
+# have to `export` it in every new terminal session. Fully optional - `export` still
+# works fine without this installed.
+python-dotenv>=1.0.0
+
+# Real LLM extraction path (used automatically when ANTHROPIC_API_KEY is set)
+anthropic>=0.121.0
+
+# Optional: live Google Sheets writes (see sheets_writer.py for setup)
+gspread>=6.0.0
+google-auth>=2.30.0
+
+# Dev only - for running tests/
+pytest>=8.0.0
