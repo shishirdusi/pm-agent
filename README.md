@@ -65,6 +65,43 @@ proposed task (approve/edit/ignore/split) right in the browser, and the tracker 
 live from the same `output/task_tracker.csv` the CLI writes to - so you can freely mix using
 the terminal and the browser on the same tracker.
 
+## Deploying it
+
+By default `server.py` only runs on your own machine (`http://127.0.0.1:8000`) - you have to
+start it before each use, and only you can reach it. To make it available all the time without
+running a terminal command first, deploy it to a small always-on host. **Render's free tier**
+is the simplest option (no credit card, GitHub-integrated):
+
+1. Push this repo to GitHub (see the git/GitHub steps earlier in this README's history, or
+   just `git push` if you've already got a remote set up).
+2. Go to [render.com](https://render.com), sign in with GitHub, click **New +** → **Web Service**.
+3. Pick this repo. Render should auto-detect the `Procfile` (`web: uvicorn server:app --host
+   0.0.0.0 --port $PORT`) - if it asks for a build/start command manually instead, use:
+   - Build command: `pip install -r requirements.txt`
+   - Start command: `uvicorn server:app --host 0.0.0.0 --port $PORT`
+4. Under **Environment**, add these variables (Render's dashboard, not your local `.env` -
+   `.env` never gets deployed since it's gitignored, which is correct):
+   - `ANTHROPIC_API_KEY` = your key
+   - `APP_USERNAME` = a username you pick
+   - `APP_PASSWORD` = a password you pick
+
+   **Don't skip the last two.** Without them, anyone who finds your Render URL can use the
+   tool and spend your API credits - `server.py` only skips the login when both are unset,
+   which is meant for local-only use, not a public deployment.
+5. Click **Create Web Service**. Render builds and deploys it, and gives you a URL like
+   `https://pm-agent-xyz.onrender.com`. Open it, log in with the username/password from step 4,
+   and it's the same tool, just always on.
+
+One real trade-off with Render's free tier: it spins down after periods of inactivity and takes
+~30-60 seconds to wake back up on the next request. Fine for occasional personal/team use; if
+that delay is annoying, Render's cheapest paid tier (or Railway/Fly.io, which work almost
+identically) removes it.
+
+Whichever host you use, the tracker CSV lives on that server's disk, not synced anywhere else -
+if you care about not losing it if the service is ever redeployed/recreated, that's the case
+for eventually moving from a CSV to a real database (see the "what's next" ideas below) or
+wiring up the Google Sheets writer as a second, durable copy.
+
 ## Files
 
 | File | What it does |

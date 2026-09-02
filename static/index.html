@@ -73,7 +73,10 @@
 
   <div id="proposalsWrap"></div>
 
-  <div class="heading" id="trackerHeading">Task tracker</div>
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-top: 1.75rem;">
+    <div class="heading" id="trackerHeading" style="margin:0;">Task tracker</div>
+    <button id="resetBtn" onclick="clearTracker()" style="color:#791f1f; border-color:#791f1f;">Clear tracker</button>
+  </div>
   <div id="trackerWrap"></div>
 
 <script>
@@ -225,6 +228,26 @@ async function applyDecisions() {
   document.getElementById("proposalsWrap").innerHTML = "";
   document.getElementById("methodTag").textContent = "";
   renderTracker(data.rows);
+}
+
+async function clearTracker() {
+  const btn = document.getElementById("resetBtn");
+  const confirmed = window.confirm(
+    "Clear the entire tracker? This deletes every tracked task and cannot be undone."
+  );
+  if (!confirmed) return;
+
+  btn.disabled = true; btn.textContent = "Clearing...";
+  try {
+    const res = await fetch("/api/reset", { method: "POST" });
+    const data = await res.json();
+    if (!res.ok) { document.getElementById("extractError").textContent = data.detail || "Reset failed."; return; }
+    renderTracker(data.rows);
+  } catch (e) {
+    document.getElementById("extractError").textContent = "Request failed: " + e.message;
+  } finally {
+    btn.disabled = false; btn.textContent = "Clear tracker";
+  }
 }
 
 loadTracker();
