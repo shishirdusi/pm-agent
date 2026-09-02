@@ -14,6 +14,11 @@ anthropic>=0.121.0
 fastapi>=0.110.0
 uvicorn>=0.29.0
 
+# Optional: Slack bot integration (see server.py's "Slack integration" section
+# and README.md for setup). Only used if SLACK_BOT_TOKEN/SLACK_SIGNING_SECRET
+# are set - safe to leave installed even if you never use it.
+slack_sdk>=3.27.0
+
 # Optional: live Google Sheets writes (see sheets_writer.py for setup)
 gspread>=6.0.0
 google-auth>=2.30.0

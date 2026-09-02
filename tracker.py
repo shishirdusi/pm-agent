@@ -39,6 +39,12 @@ COLUMNS = [
 ]
 
 SIMILARITY_THRESHOLD = 0.55  # tuned for short PM-style task titles
+GRAY_ZONE = 0.15  # scores within this band of the threshold get a semantic
+                   # second opinion from Claude (if a key is available) instead
+                   # of trusting the plain string-similarity score outright -
+                   # this is specifically aimed at the two real false-positive
+                   # matches found in testing (both landed at 0.60/0.64, just
+                   # over threshold - squarely in this band)
 
 
 @dataclass
@@ -82,17 +88,69 @@ def _title_similarity(a: str, b: str) -> float:
     return difflib.SequenceMatcher(None, norm(a), norm(b)).ratio()
 
 
+def _semantic_match_check(existing_task: str, existing_desc: str,
+                           new_task: str, new_desc: str) -> bool | None:
+    """
+    Asks Claude whether two tasks refer to the same real-world piece of work, for
+    the ambiguous cases plain string similarity can't confidently call either way.
+    Returns True (same), False (different), or None if unavailable (no API key,
+    or the call failed for any reason) - callers fall back to the plain
+    similarity-threshold check when this returns None, so a flaky/missing API
+    call never blocks the merge flow, it just loses this extra layer of judgment.
+    """
+    import os
+    if not os.environ.get("ANTHROPIC_API_KEY"):
+        return None
+    try:
+        import anthropic
+        client = anthropic.Anthropic()
+        prompt = (
+            f'Task A: "{existing_task}" - {existing_desc}\n'
+            f'Task B: "{new_task}" - {new_desc}\n\n'
+            "Are Task A and Task B the SAME real-world piece of work (even if worded "
+            "differently across two meetings), or are they two DIFFERENT tasks that "
+            "just happen to read similarly (e.g. different owners, different specific "
+            "deliverables within the same broader effort)? "
+            "Answer with exactly one word: SAME or DIFFERENT."
+        )
+        resp = client.messages.create(
+            model="claude-sonnet-4-6",
+            max_tokens=10,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        answer = "".join(b.text for b in resp.content if b.type == "text").strip().upper()
+        return answer.startswith("SAME")
+    except Exception:
+        return None
+
+
 def _find_match(new_task: dict, existing_rows: list[dict]) -> int | None:
-    best_idx, best_score = None, 0.0
+    best_idx, best_score, best_row = None, 0.0, None
     for i, row in enumerate(existing_rows):
         if row.get("workstream", "").strip().lower() != new_task.get("workstream", "").strip().lower():
             continue
         score = _title_similarity(row.get("task", ""), new_task.get("task", ""))
         if score > best_score:
-            best_idx, best_score = i, score
-    if best_idx is not None and best_score >= SIMILARITY_THRESHOLD:
+            best_idx, best_score, best_row = i, score, row
+
+    if best_idx is None:
+        return None
+
+    # Clearly above or below the threshold's gray zone: trust the heuristic outright,
+    # and skip the API call entirely (cheap, fast, deterministic for the easy cases).
+    if best_score >= SIMILARITY_THRESHOLD + GRAY_ZONE:
         return best_idx
-    return None
+    if best_score < SIMILARITY_THRESHOLD - GRAY_ZONE:
+        return None
+
+    # Ambiguous zone: ask for a semantic second opinion if a key is available.
+    semantic = _semantic_match_check(
+        best_row.get("task", ""), best_row.get("description", ""),
+        new_task.get("task", ""), new_task.get("description", ""),
+    )
+    if semantic is not None:
+        return best_idx if semantic else None
+    return best_idx if best_score >= SIMILARITY_THRESHOLD else None
 
 
 def propose_merge(existing_rows: list[dict], new_tasks: list[dict], meeting_date: str) -> list[dict]:

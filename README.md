@@ -51,9 +51,12 @@ python3 run_pipeline.py --notes path/to/notes.txt --meeting-date 2026-08-12 --wr
 ```bash
 pytest -v
 ```
-27 tests covering the dedupe/merge logic, the review-decision application (approve/edit/
-ignore/split), CSV round-tripping, and the extractor's fallback tiers — no network calls, no
-API key required.
+49 tests covering the dedupe/merge logic (including a semantic-similarity tiebreaker - see
+below), review decisions, CSV round-tripping, extractor fallback tiers, the Google Sheets writer
+(mocked, no real credentials needed to test the logic), and the Slack integration (real HMAC
+signature verification, replay-attack rejection, bot-loop prevention) - all with no network
+calls, no API key required. Runs automatically on every push via GitHub Actions too (see
+`.github/workflows/tests.yml`).
 
 **Or use the local web UI** (talks directly to the same backend modules - no logic duplicated
 in JavaScript, and your API key never leaves the server):
@@ -63,7 +66,57 @@ python3 server.py
 Then open **http://127.0.0.1:8000**. Paste in meeting notes, click Extract, review each
 proposed task (approve/edit/ignore/split) right in the browser, and the tracker table updates
 live from the same `output/task_tracker.csv` the CLI writes to - so you can freely mix using
-the terminal and the browser on the same tracker.
+the terminal and the browser on the same tracker. You can also **filter the tracker** by owner/
+workstream/status, **edit or delete** any existing row directly, and **download it as CSV**
+straight from the browser.
+
+## Better duplicate detection (semantic tiebreaker)
+
+Plain string similarity (the original approach) gets fooled by titles that read alike but
+describe different work - two real cases of this showed up in testing (see the retro in
+`pm_agent_submission.docx` if you have it, or `tests/test_tracker.py`'s `test_gray_zone_*`
+tests). Scores land in one of three bands:
+
+- **Clearly a match** (similarity ≥ 0.70) - trusted outright, no API call spent confirming the obvious.
+- **Clearly not a match** (similarity < 0.40) - same, trusted outright.
+- **Ambiguous** (0.40-0.70) - if `ANTHROPIC_API_KEY` is set, Claude is asked a direct yes/no
+  question ("are these the same real-world task?") and that answer decides it. Without a key,
+  it falls back to the plain 0.55 threshold exactly as before - nothing changes if you don't
+  have a key configured.
+
+This directly targets the two real false-positive matches found in testing, both of which
+landed at 0.60/0.64 - squarely in the ambiguous band.
+
+## Slack bot
+
+Lets you post meeting notes in a Slack channel instead of pasting into the web UI. It never
+skips human review - it only replies in-thread with what it found and points back to the web UI
+to actually approve anything.
+
+**This needs your server to be reachable at a public URL** (Slack can't send events to
+`http://127.0.0.1`), so set this up *after* deploying to Render (see "Deploying it" above), or
+use a tool like `ngrok` to test locally first.
+
+1. Go to [api.slack.com/apps](https://api.slack.com/apps) → **Create New App** → **From scratch**.
+2. Under **OAuth & Permissions**, add the `chat:write` Bot Token Scope, then **Install to Workspace**.
+   Copy the **Bot User OAuth Token** (starts with `xoxb-`).
+3. Under **Basic Information**, copy the **Signing Secret**.
+4. Under **Event Subscriptions**, turn events on. Set the Request URL to
+   `https://<your-render-url>/slack/events` - Slack will immediately try to verify this URL
+   (this is the `url_verification` handshake `server.py` handles automatically), so your server
+   needs to already be deployed and have `SLACK_BOT_TOKEN`/`SLACK_SIGNING_SECRET` set *before*
+   you enter the URL here, or the verification will fail.
+5. Under that same section, subscribe to the `message.channels` bot event.
+6. In Slack itself, invite the bot to whichever channel you'll post notes in (`/invite @YourBotName`).
+7. Set these environment variables on Render (same place you set `ANTHROPIC_API_KEY`):
+   - `SLACK_BOT_TOKEN` = the `xoxb-...` token from step 2
+   - `SLACK_SIGNING_SECRET` = the secret from step 3
+   - `SLACK_NOTES_CHANNEL_ID` (optional but recommended) = the channel's ID (right-click the
+     channel in Slack → View channel details → copy the ID at the bottom). Without this, the
+     bot reacts to every message in every channel it's in, which is rarely what you want.
+
+Post a message in that channel and the bot should reply in a thread with what it found within a
+few seconds.
 
 ## Deploying it
 
@@ -110,8 +163,10 @@ wiring up the Google Sheets writer as a second, durable copy.
 | `tracker.py` | Loads/saves the tracker CSV. Matches new tasks against existing rows (same workstream + similar title) to propose **add** vs **update**, so the same task doesn't get duplicated across meetings. |
 | `review.py` | The human-in-the-loop gate. Approve / edit / ignore / split, for every proposed change. Nothing reaches the tracker without going through here. |
 | `run_pipeline.py` | Runs one meeting note through the full flow, interactively (terminal). |
-| `server.py` | Local web UI. A thin FastAPI layer over the exact same `extractor.py`/`tracker.py`/`review.py` - no logic reimplemented in JS. Run it, open `http://127.0.0.1:8000`. |
-| `static/index.html` | The browser frontend for `server.py`. Pure rendering + `fetch()` calls to `/api/*` - all the actual decision-making happens server-side. |
+| `server.py` | Local web UI. A thin FastAPI layer over the exact same `extractor.py`/`tracker.py`/`review.py` - no logic reimplemented in JS. Run it, open `http://127.0.0.1:8000`. Also hosts the optional Slack webhook (`/slack/events`). |
+| `static/index.html` | The browser frontend for `server.py`. Extract/review/apply, plus filter/edit/delete/download on the tracker table itself. |
+| `.github/workflows/tests.yml` | Runs the full test suite automatically on every push/PR via GitHub Actions. |
+| `Procfile` | Tells Render (or Railway/Heroku-style platforms) how to start the server. |
 | `sheets_writer.py` | Optional: pushes the tracker to a real Google Sheet if credentials are configured. CSV always works with no setup. |
 | `demo_run.py` | Runs 3 real standups through the pipeline back-to-back with pre-scripted (but realistic) review decisions, so the whole flow — including dedupe, status updates, and a reviewer catching two bad auto-matches — is visible without typing anything. |
 | `tests/` | Automated tests (pytest) for the dedupe/merge logic, review decisions, and extractor fallbacks. |

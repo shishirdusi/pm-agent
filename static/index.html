@@ -75,14 +75,33 @@
 
   <div style="display:flex; justify-content:space-between; align-items:center; margin-top: 1.75rem;">
     <div class="heading" id="trackerHeading" style="margin:0;">Task tracker</div>
-    <button id="resetBtn" onclick="clearTracker()" style="color:#791f1f; border-color:#791f1f;">Clear tracker</button>
+    <div class="btn-row" style="margin:0;">
+      <button id="downloadBtn" onclick="downloadCsv()">Download CSV</button>
+      <button id="resetBtn" onclick="clearTracker()" style="color:#791f1f; border-color:#791f1f;">Clear tracker</button>
+    </div>
   </div>
+
+  <div class="btn-row" style="margin-top:10px;">
+    <input id="filterOwner" placeholder="Filter by owner..." style="flex:1; min-width:140px;" oninput="renderTracker()" />
+    <input id="filterWorkstream" placeholder="Filter by workstream..." style="flex:1; min-width:140px;" oninput="renderTracker()" />
+    <select id="filterStatus" style="flex:1; min-width:140px;" onchange="renderTracker()">
+      <option value="">All statuses</option>
+      <option>Not Started</option>
+      <option>In Progress</option>
+      <option>Pending Review</option>
+      <option>Blocked</option>
+      <option>Completed</option>
+    </select>
+  </div>
+
   <div id="trackerWrap"></div>
 
 <script>
 let proposals = [];
 let decisions = [];
 let editingIndex = null;
+let allTrackerRows = [];
+let editingRowIndex = null;
 
 function esc(s) {
   return String(s == null ? "" : s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -92,18 +111,87 @@ function statusClass(s) { return (s || "").toLowerCase().replace(/\s+/g, "-"); }
 async function loadTracker() {
   const res = await fetch("/api/tracker");
   const data = await res.json();
-  renderTracker(data.rows);
+  allTrackerRows = data.rows;
+  renderTracker();
+}
+
+function getFilteredRows() {
+  const owner = document.getElementById("filterOwner").value.trim().toLowerCase();
+  const workstream = document.getElementById("filterWorkstream").value.trim().toLowerCase();
+  const status = document.getElementById("filterStatus").value;
+  return allTrackerRows.filter((r, i) => {
+    r.__index = i; // stamp the row's real index in the unfiltered array, for edit/delete targeting
+    if (owner && !(r.owner || "").toLowerCase().includes(owner)) return false;
+    if (workstream && !(r.workstream || "").toLowerCase().includes(workstream)) return false;
+    if (status && r.status !== status) return false;
+    return true;
+  });
 }
 
 function renderTracker(rows) {
-  document.getElementById("trackerHeading").textContent = `Task tracker (${rows.length} rows)`;
+  if (rows) allTrackerRows = rows; // called with fresh data after add/apply/reset
+  const filtered = getFilteredRows();
+  const suffix = filtered.length === allTrackerRows.length ? "" : ` of ${allTrackerRows.length}`;
+  document.getElementById("trackerHeading").textContent = `Task tracker (${filtered.length}${suffix} rows)`;
+
   const wrap = document.getElementById("trackerWrap");
-  if (!rows.length) { wrap.innerHTML = '<div class="empty">No tasks tracked yet.</div>'; return; }
-  const body = rows.map(r => `<tr>
+  if (!allTrackerRows.length) { wrap.innerHTML = '<div class="empty">No tasks tracked yet.</div>'; return; }
+  if (!filtered.length) { wrap.innerHTML = '<div class="empty">No rows match those filters.</div>'; return; }
+
+  const body = filtered.map(r => {
+    const i = r.__index;
+    if (editingRowIndex === i) {
+      const fields = ["workstream","task","owner","status","priority","due_date","blocker","follow_up_needed"];
+      return `<tr><td colspan="6">
+        <div class="edit-grid">${fields.map(f =>
+          `<div><label>${f.replace(/_/g," ")}</label><input data-rowfield="${f}" value="${esc(r[f])}" /></div>`
+        ).join("")}</div>
+        <div class="btn-row">
+          <button class="btn-primary" onclick="saveRowEdit(${i})">Save</button>
+          <button onclick="cancelRowEdit()">Cancel</button>
+        </div>
+      </td></tr>`;
+    }
+    return `<tr>
       <td>${esc(r.workstream)}</td><td>${esc(r.task)}</td><td>${esc(r.owner)}</td>
       <td><span class="pill pill-status ${statusClass(r.status)}">${esc(r.status)}</span></td>
-      <td>${esc(r.priority)}</td><td>${esc(r.last_updated)}</td></tr>`).join("");
-  wrap.innerHTML = `<table><thead><tr><th>Workstream</th><th>Task</th><th>Owner</th><th>Status</th><th>Priority</th><th>Updated</th></tr></thead><tbody>${body}</tbody></table>`;
+      <td>${esc(r.priority)}</td>
+      <td style="white-space:nowrap;">
+        <button onclick="startRowEdit(${i})" style="padding:3px 8px; font-size:11.5px;">Edit</button>
+        <button onclick="deleteRow(${i})" style="padding:3px 8px; font-size:11.5px; color:#791f1f;">Delete</button>
+      </td>
+    </tr>`;
+  }).join("");
+  wrap.innerHTML = `<table><thead><tr><th>Workstream</th><th>Task</th><th>Owner</th><th>Status</th><th>Priority</th><th></th></tr></thead><tbody>${body}</tbody></table>`;
+}
+
+function startRowEdit(i) { editingRowIndex = i; renderTracker(); }
+function cancelRowEdit() { editingRowIndex = null; renderTracker(); }
+
+async function saveRowEdit(i) {
+  const rows = document.querySelectorAll(`input[data-rowfield]`);
+  const edits = {};
+  rows.forEach(inp => { edits[inp.dataset.rowfield] = inp.value; });
+  const res = await fetch(`/api/tracker/${i}`, {
+    method: "PUT", headers: {"content-type": "application/json"}, body: JSON.stringify(edits),
+  });
+  const data = await res.json();
+  if (!res.ok) { document.getElementById("extractError").textContent = data.detail || "Edit failed."; return; }
+  editingRowIndex = null;
+  renderTracker(data.rows);
+}
+
+async function deleteRow(i) {
+  const row = allTrackerRows[i];
+  if (!window.confirm(`Delete "${row.task}"? This can't be undone.`)) return;
+  const res = await fetch(`/api/tracker/${i}`, { method: "DELETE" });
+  const data = await res.json();
+  if (!res.ok) { document.getElementById("extractError").textContent = data.detail || "Delete failed."; return; }
+  renderTracker(data.rows);
+}
+
+function downloadCsv() {
+  window.location.href = "/api/tracker/csv";
 }
 
 async function doExtract() {

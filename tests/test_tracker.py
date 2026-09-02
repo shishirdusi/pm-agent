@@ -7,12 +7,13 @@ Run with: pytest tests/test_tracker.py -v
 import csv
 import sys
 from pathlib import Path
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from tracker import (
     propose_merge, load_tracker, save_tracker, _title_similarity, _find_match, COLUMNS,
-    SIMILARITY_THRESHOLD,
+    SIMILARITY_THRESHOLD, _semantic_match_check,
 )
 from review import ReviewDecision, apply_decisions
 
@@ -189,6 +190,74 @@ def test_multiple_proposals_mixed_decisions():
     assert result[0]["status"] == "Completed"
     assert result[1]["task"] == "Migrate Langfuse tracing to the internal Sano instance"
     assert result[1]["owner"] == "Rohit Adiga"
+
+
+# ---------------------------------------------------------------- semantic tiebreaker (gray-zone matching)
+
+def test_gray_zone_score_with_no_api_key_falls_back_to_plain_threshold(monkeypatch):
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    # These are the exact real-world titles that produced a 0.598 similarity score
+    # (in the gray zone [0.40, 0.70]) and were a genuine false-positive match in
+    # testing. With no key available, behavior must be identical to the pre-semantic
+    # heuristic: score >= threshold (0.55) still means "match".
+    existing = [make_task(task="Integrate five products into multi-URL AI visibility flow", owner="Yatharth Srivastava")]
+    new_task = make_task(task="Five-product input for multi-URL feature", owner="Bindu Achalla")
+    proposals = propose_merge(existing, [new_task], "2026-08-02")
+    assert proposals[0]["action"] == "update", "no key available -> falls back to the plain 0.55 threshold, which this score clears"
+
+
+def test_gray_zone_score_with_key_and_semantic_says_different_overrides_the_heuristic(monkeypatch):
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-fake-for-test")
+    with patch("tracker._semantic_match_check", return_value=False) as mock_check:
+        existing = [make_task(task="Integrate five products into multi-URL AI visibility flow", owner="Yatharth Srivastava")]
+        new_task = make_task(task="Five-product input for multi-URL feature", owner="Bindu Achalla")
+        proposals = propose_merge(existing, [new_task], "2026-08-02")
+    assert mock_check.called, "a gray-zone score should trigger a semantic check when a key is available"
+    assert proposals[0]["action"] == "add", \
+        "semantic check said DIFFERENT - this should now correctly propose ADD instead of the old false-positive UPDATE"
+
+
+def test_gray_zone_score_with_key_and_semantic_says_same_confirms_the_match(monkeypatch):
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-fake-for-test")
+    with patch("tracker._semantic_match_check", return_value=True) as mock_check:
+        existing = [make_task(task="Integrate five products into multi-URL AI visibility flow")]
+        new_task = make_task(task="Five-product input for multi-URL feature")
+        proposals = propose_merge(existing, [new_task], "2026-08-02")
+    assert mock_check.called
+    assert proposals[0]["action"] == "update"
+
+
+def test_obvious_match_skips_semantic_check_entirely(monkeypatch):
+    # Score is 1.0 (identical titles) - nowhere near the gray zone, so this must
+    # never spend an API call confirming the obvious.
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-fake-for-test")
+    with patch("tracker._semantic_match_check") as mock_check:
+        existing = [make_task(task="Exact same title here")]
+        new_task = make_task(task="Exact same title here")
+        proposals = propose_merge(existing, [new_task], "2026-08-02")
+    assert not mock_check.called, "obvious matches shouldn't cost an API call"
+    assert proposals[0]["action"] == "update"
+
+
+def test_obvious_non_match_skips_semantic_check_entirely(monkeypatch):
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-fake-for-test")
+    with patch("tracker._semantic_match_check") as mock_check:
+        existing = [make_task(task="Fix login bug")]
+        new_task = make_task(task="Write Q3 marketing plan")
+        proposals = propose_merge(existing, [new_task], "2026-08-02")
+    assert not mock_check.called, "obviously unrelated titles shouldn't cost an API call either"
+    assert proposals[0]["action"] == "add"
+
+
+def test_semantic_check_returns_none_when_no_key_present():
+    assert _semantic_match_check("a", "", "b", "") is None
+
+
+def test_semantic_check_returns_none_on_api_failure(monkeypatch):
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-fake-for-test")
+    with patch("anthropic.Anthropic", side_effect=RuntimeError("network exploded")):
+        result = _semantic_match_check("a", "", "b", "")
+    assert result is None, "a failed API call should degrade to 'unknown', never crash the merge flow"
 
 
 # ---------------------------------------------------------------- CSV round-trip
